@@ -2,7 +2,7 @@ import { Stage, Layer, Rect, Transformer } from 'react-konva';
 // import { Textfield } from '@material-ui/core';
 import React, { useState } from 'react';
 
-    const Rectangle = ({ shapeProps, isSelected, onSelect, onChange, shapeGroups}) => {
+    const Rectangle = ({ shapeProps, isSelected, onSelect, onChange, shapeGroups, allShapes}) => {
         const shapeRef = React.useRef();
         const trRef = React.useRef();
         // const [allShapesCoordDiff, setAllShapesCoordDiff] = useState([]);
@@ -85,7 +85,7 @@ import React, { useState } from 'react';
                 });
               }}
               onTransformEnd={(e) => {
-                // transformer is changing scale of the node
+                  // transformer is changing scale of the node
                 // and NOT its width or height
                 // but in the store we have only width and height
                 // to match the data better we will reset scale on transform end
@@ -160,6 +160,45 @@ import React, { useState } from 'react';
           shapeType: 'rect'
         };
 
+        const GenerateUniqueShapeId = (shapeType, shapeArray) => {
+          let j = 1;
+          let i = 0;
+          let foundUniqueIndex = false;
+          let uniqueId = '';
+          const remainingShapes = [...shapeArray];
+          
+          while (!foundUniqueIndex) {
+            if(remainingShapes.length === 0){
+              uniqueId = j.toString();
+              foundUniqueIndex = true;
+              break;
+            };
+
+          if((remainingShapes[i].id === j.toString()) && (remainingShapes[i].shapeType === shapeType)){
+            remainingShapes.splice(i, 1);
+            j++;
+            i = 0;
+          }
+          else {
+            if(remainingShapes[i].shapeType !== shapeType){
+              remainingShapes.splice(i, 1);
+            } 
+            else {
+              i++;
+            };
+          };
+
+          if((remainingShapes.length === i)){
+            uniqueId = j.toString();
+            foundUniqueIndex = true;
+            setSelectedShape(null);
+            selectShape(null);
+            break;
+          };
+        };
+        return uniqueId;
+      };
+
         const checkDeselect = (e) => {
           // deselect when clicked on empty area
           const clickedOnEmpty = e.target === e.target.getStage();
@@ -171,44 +210,7 @@ import React, { useState } from 'react';
 
         const handleAddRectClick = () => {
           //generates a unique shape id based on existing shape ids
-          const GenerateUniqueShapeId = (shapeType, shapeArray) => {
-            let j = 1;
-            let i = 0;
-            let foundUniqueIndex = false;
-            let uniqueId = '';
-            const remainingShapes = [...shapeArray];
-            
-            while (!foundUniqueIndex) {
-              if(remainingShapes.length === 0){
-                uniqueId = j.toString();
-                foundUniqueIndex = true;
-                break;
-              };
 
-            if((remainingShapes[i].id === j.toString()) && (remainingShapes[i].shapeType === shapeType)){
-              remainingShapes.splice(i, 1);
-              j++;
-              i = 0;
-            }
-            else {
-              if(remainingShapes[i].shapeType !== shapeType){
-                remainingShapes.splice(i, 1);
-              } 
-              else {
-                i++;
-              };
-            };
-
-            if((remainingShapes.length === i)){
-              uniqueId = j.toString();
-              foundUniqueIndex = true;
-              setSelectedShape(null);
-              selectShape(null);
-              break;
-            };
-          };
-          return uniqueId;
-        };
           let uniqueId = GenerateUniqueShapeId('rect', allShapes);
           newRect.id = uniqueId;
           const newAllShapes = [...allShapes, newRect];
@@ -301,12 +303,27 @@ import React, { useState } from 'react';
             };
           };
         };
+
+        const handleCopyShapeClick = () => {
+          if (selectedId >= 0){
+          let uniqueId = GenerateUniqueShapeId('rect', allShapes);
+          //doesn't work
+          let copiedShape = {selectedShape};
+          copiedShape.id = uniqueId;
+          copiedShape.x = 10;
+          copiedShape.y = 10;
+          selectShape(uniqueId);
+          setSelectedShape(copiedShape);
+          setAllShapes([...allShapes, {selectedShape}]);
+          };
+        };
       
         return (
           <>
           <button type="input" style={{ width: '100px', height: '20px' }} onClick={handleAddRectClick}>Add rectangle</button>
           <button type="input" style={{ width: '100px', height: '20px' }} onClick={handleDeleteShape}>Delete shape</button>
           <button type="input" style={{ width: '100px', height: '20px' }} value={null} onClick={handleAddToGroupClick}>Add to group</button>
+          <button type="input" style={{ width: '100px', height: '20px' }} value={null} onClick={handleCopyShapeClick}>Copy Shape</button>
           <div>
             <label>Group name: </label>
             <input type='text' onChange={handleGroupNameInputChange}></input>
